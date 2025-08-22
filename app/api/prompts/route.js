@@ -6,26 +6,56 @@ export async function GET(request) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
   const { userId } = await auth()
   
-  // 从 URL 中获取 tag 参数
+  // 从 URL 中获取参数
   const { searchParams } = new URL(request.url);
   const tag = searchParams.get('tag');
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '12');
+  const search = searchParams.get('search');
+
+  // 计算偏移量
+  const offset = (page - 1) * limit;
 
   let query = supabase
     .from('prompts')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('user_id', userId);
+
   // 如果存在 tag 参数，添加过滤条件
   if (tag) {
     query = query.contains('tags', [tag]);
   }
 
-  const { data: prompts, error } = await query.order('created_at', { ascending: false });
+  // 如果存在搜索参数，添加搜索条件
+  if (search) {
+    query = query.or(`title.ilike.%${search}%, content.ilike.%${search}%`);
+  }
+
+  // 添加分页和排序
+  const { data: prompts, error, count } = await query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(prompts);
+  // 计算分页信息
+  const totalPages = Math.ceil(count / limit);
+  const hasNext = page < totalPages;
+  const hasPrev = page > 1;
+
+  return NextResponse.json({
+    data: prompts,
+    pagination: {
+      current_page: page,
+      total_pages: totalPages,
+      total_count: count,
+      per_page: limit,
+      has_next: hasNext,
+      has_prev: hasPrev
+    }
+  });
 }
 
 export async function POST(request) {
