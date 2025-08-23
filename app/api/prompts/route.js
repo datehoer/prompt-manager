@@ -8,7 +8,7 @@ export async function GET(request) {
   
   // 从 URL 中获取参数
   const { searchParams } = new URL(request.url);
-  const tag = searchParams.get('tag');
+  const tags = searchParams.getAll('tags');
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '12');
   const search = searchParams.get('search');
@@ -21,9 +21,9 @@ export async function GET(request) {
     .select('*', { count: 'exact' })
     .eq('user_id', userId);
 
-  // 如果存在 tag 参数，添加过滤条件
-  if (tag) {
-    query = query.contains('tags', [tag]);
+  // 如果存在 tags 参数，添加过滤条件
+  if (tags && tags.length > 0) {
+    query = query.overlaps('tags', tags);
   }
 
   // 如果存在搜索参数，添加搜索条件

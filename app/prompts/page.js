@@ -8,14 +8,17 @@ import { Button } from "@/components/ui/button"
 import { Search, PlusCircle } from "lucide-react"
 import SmartPagination from '@/app/components/ui/SmartPagination';
 
-async function getPrompts(page = 1, limit = 12, search = '', tag = '') {
+async function getPrompts(page = 1, limit = 12, search = '', tags = []) {
   const params = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
   });
   
   if (search) params.append('search', search);
-  if (tag) params.append('tag', tag);
+  if (tags.length > 0) {
+    // 添加所有标签作为单独的参数
+    tags.forEach(tag => params.append('tags', tag));
+  }
 
   const res = await fetch(`/api/prompts?${params.toString()}`, {
     method: 'GET',
@@ -61,10 +64,10 @@ export default function PromptsPage() {
   }, []);
 
   // 获取提示词数据
-  const fetchPrompts = useCallback(async (page = 1, search = '', tag = '') => {
+  const fetchPrompts = useCallback(async (page = 1, search = '', tags = []) => {
     try {
       setIsLoading(true);
-      const response = await getPrompts(page, 12, search, tag);
+      const response = await getPrompts(page, 12, search, tags);
       
       const processedPrompts = response.data.map(prompt => ({
         ...prompt,
@@ -91,14 +94,12 @@ export default function PromptsPage() {
 
   // 当搜索或标签改变时重新获取数据
   useEffect(() => {
-    const selectedTag = selectedTags.length > 0 ? selectedTags[0] : '';
-    fetchPrompts(1, searchQuery, selectedTag);
+    fetchPrompts(1, searchQuery, selectedTags);
   }, [searchQuery, selectedTags, fetchPrompts]);
 
   // 页码改变时获取数据
   const handlePageChange = useCallback((page) => {
-    const selectedTag = selectedTags.length > 0 ? selectedTags[0] : '';
-    fetchPrompts(page, searchQuery, selectedTag);
+    fetchPrompts(page, searchQuery, selectedTags);
   }, [searchQuery, selectedTags, fetchPrompts]);
 
   return (
