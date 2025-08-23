@@ -23,7 +23,19 @@ export async function GET(request) {
 
   // 如果存在 tags 参数，添加过滤条件
   if (tags && tags.length > 0) {
-    query = query.overlaps('tags', tags);
+    // 为每个标签创建多个条件，匹配逗号分隔的标签字符串
+    // 使用 or 组合多个 ilike 条件
+    // 条件包括：完全匹配、开头匹配、结尾匹配、中间匹配
+    const conditions = [];
+    tags.forEach(tag => {
+      conditions.push(
+        `tags.eq.${tag}`,           // 完全匹配（只有一个标签）
+        `tags.ilike.${tag},%`,      // 开头匹配
+        `tags.ilike.%,${tag}`,      // 结尾匹配
+        `tags.ilike.%,${tag},%`     // 中间匹配
+      );
+    });
+    query = query.or(conditions.join(','));
   }
 
   // 如果存在搜索参数，添加搜索条件
