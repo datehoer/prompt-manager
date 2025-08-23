@@ -23,18 +23,10 @@ export async function GET(request) {
 
   // 如果存在 tags 参数，添加过滤条件
   if (tags && tags.length > 0) {
-    // 为每个标签创建多个条件，匹配逗号分隔的标签字符串
-    // 使用 or 组合多个 ilike 条件
-    // 条件包括：完全匹配、开头匹配、结尾匹配、中间匹配
-    const conditions = [];
-    tags.forEach(tag => {
-      conditions.push(
-        `tags.eq.${tag}`,           // 完全匹配（只有一个标签）
-        `tags.ilike.${tag},%`,      // 开头匹配
-        `tags.ilike.%,${tag}`,      // 结尾匹配
-        `tags.ilike.%,${tag},%`     // 中间匹配
-      );
-    });
+    // 为每个标签创建 ilike 条件（宽松匹配，避免在 or 表达式值中出现逗号导致解析错误）
+    // 说明：使用 %tag% 可能会带来少量误匹配（如 "art" 命中 "cartoon"），
+    // 若需严格边界匹配，建议将数据库中的 tags 列改为数组类型并使用数组包含查询。
+    const conditions = tags.map(tag => `tags.ilike.%${tag}%`);
     query = query.or(conditions.join(','));
   }
 
