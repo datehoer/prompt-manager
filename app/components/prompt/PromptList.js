@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
+import ReactMarkdown from 'react-markdown';
 import { Button } from "@/components/ui/button"
 import { Copy, Share2, Pencil } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -106,9 +107,9 @@ export default function PromptList({ prompts }) {
                 </Button>
               </div>
               <div className="h-full overflow-auto">
-                <p className="text-muted-foreground text-xs md:text-sm leading-relaxed p-4 md:p-4">
-                  {prompt.content}
-                </p>
+                <div className="text-muted-foreground text-xs md:text-sm leading-relaxed p-4 md:p-4 prose prose-sm max-w-none">
+                  <ReactMarkdown>{prompt.content || '*暂无内容*'}</ReactMarkdown>
+                </div>
               </div>
             </div>
           
