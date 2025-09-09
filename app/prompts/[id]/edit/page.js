@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from 'next/image';
 import CreatableSelect from 'react-select/creatable';
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Eye, Edit } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
 
 export default function EditPrompt({ params }) {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function EditPrompt({ params }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagOptions, setTagOptions] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [previewMode, setPreviewMode] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -32,7 +34,7 @@ export default function EditPrompt({ params }) {
     fetch('/api/tags')
       .then((response) => response.json())
       .then((data) => {
-        setTagOptions(data.map(tag => ({ value: tag.name, label: tag.name })));
+        setTagOptions(data.map(tag => ({ value: tag, label: tag })));
       })
       .catch((error) => console.error('Error fetching tags:', error));
   }, [id]);
@@ -114,14 +116,45 @@ export default function EditPrompt({ params }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="content">内容</Label>
-              <Textarea
-                id="content"
-                value={prompt.content}
-                onChange={(e) => setPrompt({ ...prompt, content: e.target.value })}
-                className="min-h-[128px]"
-                required
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="content">内容</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={previewMode ? "outline" : "default"}
+                    size="sm"
+                    onClick={() => setPreviewMode(false)}
+                    className="h-8 px-3"
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    编辑
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={previewMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPreviewMode(true)}
+                    className="h-8 px-3"
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    预览
+                  </Button>
+                </div>
+              </div>
+              {previewMode ? (
+                <div className="min-h-[128px] p-4 border rounded-md bg-gray-50 dark:bg-gray-900 prose prose-sm max-w-none">
+                  <ReactMarkdown>{prompt.content || '*暂无内容*'}</ReactMarkdown>
+                </div>
+              ) : (
+                <Textarea
+                  id="content"
+                  value={prompt.content}
+                  onChange={(e) => setPrompt({ ...prompt, content: e.target.value })}
+                  className="min-h-[128px]"
+                  required
+                  placeholder="支持Markdown格式..."
+                />
+              )}
             </div>
 
             <div className="space-y-2">
